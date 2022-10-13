@@ -48,7 +48,7 @@ def drawPowerUp():
 
 
 PLAYER_ORIG_WIDTH = 100
-player = GameObject((50,50,50), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-60, PLAYER_ORIG_WIDTH, 60),7,0)  
+player = GameObject((50,50,50), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-80, PLAYER_ORIG_WIDTH, 80),10,0)  
 activeGerms = []
 activePowerUps = []
 
