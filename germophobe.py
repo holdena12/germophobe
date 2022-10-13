@@ -4,6 +4,9 @@ import random
 import time
 import threading
 
+
+
+
 #the players score
 score = 0
 
@@ -13,17 +16,33 @@ powerUpSpread = random.randint(7,15)
 germRNot = 4
 BOARD_WIDTH = 800
 BOARD_HEIGHT = 1100
+gameTop = pygame.Rect(0,0,BOARD_WIDTH,1)
+gameBottom = pygame.Rect(0,BOARD_HEIGHT,BOARD_WIDTH,1)
+gameLeft = pygame.Rect(0,0,1,BOARD_HEIGHT)
+gameRight= pygame.Rect(BOARD_WIDTH,0,1,BOARD_HEIGHT)
+currentColor = (0, 0, 255)
+obstColor = (0,0, 0)
+
+level = 1
+
+
+win = pygame.display.set_mode((BOARD_WIDTH,BOARD_HEIGHT))
 
 class GameObject:
 
     dead = False
+    collisionBuffer = 0
 
-    def __init__(self, color, rect: pygame.Rect, vel, dir) -> None:
+    def __init__(self, color, rect: pygame.Rect, vel , xdir =1, ydir =1, isBaby = True,xPert = 1, yPert =1) -> None:
         self.rect = rect
         self.vel = vel
-        self.dir = dir
+        self.xdir = xdir
+        self.ydir = ydir
         self.color = color
+        self.isBaby = isBaby
         self.dead = False
+        self.xPert = xPert
+        self.yPert = yPert
 
     def setDead(self):
         self.dead = True
@@ -38,19 +57,21 @@ pygame.init()
 font = pygame.font.Font('freesansbold.ttf', 16)
 # create the display surface object  
 # of specific dimension..e(500, 500).  
-win = pygame.display.set_mode((BOARD_WIDTH,BOARD_HEIGHT))
+
   
 # set the pygame window name 
 pygame.display.set_caption("GermoPhobe...")
 
-def drawPowerUp():
-    pygame.draw.rect()
-
 
 PLAYER_ORIG_WIDTH = 100
-player = GameObject((50,50,50), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-80, PLAYER_ORIG_WIDTH, 80),10,0)  
+player = GameObject((50,50,50), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-80, PLAYER_ORIG_WIDTH, 80),10,0,0)  
 activeGerms = []
 activePowerUps = []
+obstacles = []
+
+# create obstacles
+obstacle = GameObject(obstColor, pygame.Rect(200,550,400,50), 2)
+obstacles.append(obstacle)
 
 class RepeatedTimer(object):
   def __init__(self, interval, function, *args, **kwargs):
@@ -91,31 +112,58 @@ def addPowerUp():
     powerUp = GameObject((10,75,200), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),3)
     activePowerUps.append(powerUp)
 
-def updateFallingObject(gameObject: GameObject):
-    if gameObject.rect.top == 50:
+def updateFallingObject(gameObject: GameObject, obstacles =[]):
+    if gameObject.isBaby == True:
+        gameObject.isBaby = False
         rand = random.randint(0,1) 
         if rand == 0:
-            gameObject.dir = -1
+            gameObject.xdir = -1
         else:
-            gameObject.dir = 1
+            gameObject.xdir = 1
+    
+    if gameObject.collisionBuffer>0:
+        gameObject.collisionBuffer -= 1
+
+   # detect if object hits a side wall
+    if (gameObject.rect.colliderect(gameRight)):
+        gameObject.xdir = gameObject.xdir * -1
+    elif (gameObject.rect.colliderect(gameLeft)):
+        gameObject.xdir = gameObject.xdir * -1
+    elif gameObject.ydir == -1 and gameObject.rect.y <= gameObject.rect.height:
+        gameObject.collisionBuffer = 0
+        gameObject.ydir *= -1
+    # detect if object hits an obstacle
+    if gameObject.collisionBuffer == 0:
+        for obstacle in obstacles:
+            if gameObject.rect.colliderect(obstacle):
+                gameObject.collisionBuffer = 60
+                gameObject.ydir *= -1
+                #if (gameObject.rect.left <= obstacle.left+gameObject.rect.width/2):
+                #    gameObject.xdir *= -1
+                # pick a random number between 1 and 1.5 and random boolean 0 or 1 to indicate positve or negative and then set that value to gameObject.xPert
+                # pick a random number between 1 and 1.5 and random boolean 0 or 1 to indicate positve or negative and then set that value to gameObject.yPert
+                rand_sp = random.randint(0,1)
+                if (rand_sp == 0):
+                    rand_sp=-1
+                else: 
+                    rand_sp = 1
+                #gameObject.xPert = random.uniform(1,1.5)*rand_sp
+                #gameObject.yPert = random.uniform(1,1.5)*rand_sp
+                
+                #print("Obstacle contact new pertubation is xPert {} and yPert {}".format(gameObject.xPert, gameObject.yPert))
+    
+    gameObject.rect = gameObject.rect.move(gameObject.xdir*gameObject.vel*gameObject.xPert, gameObject.ydir*gameObject.vel*gameObject.yPert)
         
-    gameObject.rect = gameObject.rect.move(gameObject.dir*gameObject.vel, gameObject.vel)
-        
-    # detect if object hits a side wall
-    if gameObject.dir == 1 and gameObject.rect.x >= BOARD_WIDTH-gameObject.rect.width:
-        gameObject.dir = gameObject.dir * -1  
-    elif gameObject.dir == -1 and gameObject.rect.x <= 0+gameObject.rect.width:
-        gameObject.dir = gameObject.dir * -1
+ 
     pygame.draw.rect(win, gameObject.color, gameObject.rect)
     return gameObject.dead
+
 
 timers = []
 rt = RepeatedTimer(germRNot, addGerm)
 rpt = RepeatedTimer(powerUpSpread, addPowerUp)
 addGerm()
-level = 1
 
- 
   
 # Indicates pygame is running
 run = True
@@ -151,7 +199,18 @@ while run:
         # increment in x co-ordinate
         player.rect = player.rect.move(player.vel,0)
 
-    win.fill((0, 0, 255))
+    # covid easter egg
+    if keys[pygame.K_c]:
+        # let the chaos begin!
+        rt.stop()
+        rt = RepeatedTimer(.1, addGerm)
+
+
+    win.fill(currentColor)
+    for obstacle in obstacles:
+        obstacle.ydir = 0
+        updateFallingObject(obstacle)
+        #pygame.draw.rect(win, obstColor, obstacle)
 
     # velocity / speed of movement
     scoreString = "Score: {}".format(score)
@@ -178,13 +237,14 @@ while run:
     # process active germs
     for germ in activeGerms:
        
-        if (updateFallingObject(germ) == True):
+        if (updateFallingObject(germ, obstacles) == True):
             activeGerms.remove(germ)
         # germ collision detection
         if (germ.dead == False and player.rect.colliderect(germ.rect)):
             score += 1
             if (score % 5 == 0 ):
                 level += 1
+           
                 player.rect.width = PLAYER_ORIG_WIDTH
                 germRNot -= .2 * germRNot
                 if germRNot <= 1:
@@ -194,9 +254,7 @@ while run:
             player.rect.width = player.rect.width-10
             if player.rect.width <= 20:
                 player.rect.width =20
-            germ.dead = True
-            
-
+            germ.dead = True        
 
         if germ.dead == False and germ.rect.y >= BOARD_HEIGHT-germ.rect.height:
             germ.dead = True
@@ -210,7 +268,7 @@ while run:
         
     #process activePowerUps
     for powerUp in activePowerUps:
-        if updateFallingObject(powerUp) == True:
+        if updateFallingObject(powerUp, obstacles) == True:
             activePowerUps.remove(powerUp)
         if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
             powerUp.dead = True
@@ -218,19 +276,12 @@ while run:
         if powerUp.rect.y >= BOARD_HEIGHT-powerUp.rect.height:
             powerUp.dead = True
         
-
-    # completely fill the surface object  
-    # with black colour  
-    
-   
+ 
     # drawing object on screen which is rectangle here 
     pygame.draw.rect(win, player.color, player.rect)
 
-
-
     # it refreshes the window
     pygame.display.update() 
-
 
 # closes the pygame window 
 pygame.quit()
