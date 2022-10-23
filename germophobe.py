@@ -49,6 +49,12 @@ class GameObject:
     def setDead(self):
         self.dead = True
 
+class PowerUps(GameObject):
+  def __init__(self, color, rect: pygame.Rect, vel, xdir =1, ydir =1, isBaby = True, xPert = 1, yPert = 1, type = 0):
+    GameObject.__init__(self,color, rect , vel , xdir, ydir , isBaby , xPert , yPert)
+    self.type = type
+    #add properties etc.
+
 
 # activate the pygame library .  
 # initiate pygame and give permission  
@@ -139,10 +145,18 @@ def addGerm():
             isWeirdGerm = True
             germ.color = (255,0,0)
             germ.vel = (random.uniform(6,10))
-   
+
 
 def addPowerUp():
-    powerUp = GameObject((10,75,200), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),3)
+    powerUpType = random.randint(0,5)
+    if powerUpType > 0:
+        powerUpType = 0
+    else:
+        powerUpType = 1
+
+    powerUp = PowerUps((10,75,200), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),random.choices([-1,1]),1,True,1,1,powerUpType)
+    if powerUpType == 1:
+        powerUp.color = (255,255,255)
     activePowerUps.append(powerUp)
 
 def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False):
