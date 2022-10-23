@@ -116,18 +116,16 @@ white = (255,255,255)
 blue = (0,0,255)
 
 #vaccine = GameObject((255,165,0), pygame(player.rect.width-player.rect.width/2,player.rect.center, 0,0),0,0)
-vaccine = GameObject((50,50,75), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-105, 10, 15),0,0,0)
+
 
    
-def shootVaccine():
+def shootVaccine(vaccine):
    
- 
-    pygame.draw.rect(win,vaccine.color,vaccine.rect)
-    vaccines.append(vaccine)
-           
     vaccine.vel = 10
+    vaccine.ydir = -1
 
-
+    vaccines.append(vaccine)
+       
 isWeirdGerm = random.randint(1,6)
 germSpeed = random.uniform(4,5)
 def addWeirdGerms():
@@ -148,7 +146,7 @@ def addPowerUp():
     powerUp = GameObject((10,75,200), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),3)
     activePowerUps.append(powerUp)
 
-def updateFallingObject(gameObject: GameObject, obstacles =[]):
+def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False):
     if gameObject.isBaby == True:
         gameObject.isBaby = False
         rand = random.randint(0,1)
@@ -168,10 +166,16 @@ def updateFallingObject(gameObject: GameObject, obstacles =[]):
     elif gameObject.ydir == -1 and gameObject.rect.y <= gameObject.rect.height:
         gameObject.collisionBuffer = 0
         gameObject.ydir *= -1
+        if (dieOnImpact):
+            gameObject.dead = True
+            return True
     # detect if object hits an obstacle
     if gameObject.collisionBuffer == 0:
         for obstacle in obstacles:
             if gameObject.rect.colliderect(obstacle):
+                if (dieOnImpact):
+                    gameObject.dead = True
+                    return True
                 gameObject.collisionBuffer = 60
                 rand_dir = random.randint(-1,5)
                 if rand_dir == 0 or rand_dir == 2 or rand_dir == 3 or rand_dir == 4 or rand_dir == 5:
@@ -224,22 +228,58 @@ rt = RepeatedTimer(germRNot, addGerm)
 rpt = RepeatedTimer(powerUpSpread, addPowerUp)
 addGerm()
 
+
+def detectGermKill(germ, gameObject):
+    global score
+    global level
+    global germSpeed
+    global germRNot
+    global rt
+    if (gameObject.rect.colliderect(germ.rect)):
+        score += 1
+        if (score % 5 == 0 ):
+            level += 1
+            germSpeed += 1
+
+            gameObject.rect.width = player_width
+            germRNot -= .2 * germRNot
+            if germRNot <= 1:
+                germRNot = 1
+            rt.stop()
+            rt = RepeatedTimer(germRNot, addGerm)
+        gameObject.rect.width = gameObject.rect.width-15
+        if gameObject.rect.width <= 20:
+            gameObject.rect.width =20
+        germ.dead = True    
+    return germ.dead 
+
  
 # Indicates pygame is running
 run = True
- 
+lastFireTime = -1
+
 # infinite loop
 while run:
     # creates time delay of 10ms
     pygame.time.delay(20)
      
     # iterate over the list of Event objects  
-    # that was returned by pygame.event.get() method.  
+    # that was returned by pygame.event.get() method.
     for event in pygame.event.get():
-       
+    
         # if event object type is QUIT  
         # then quitting the pygame  
-      keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed()
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                 lastFireTime = -1
+        
+    if (keys[pygame.K_SPACE]):
+        currentTime = round(time.time()*1000)
+        if (lastFireTime < 0  or currentTime-lastFireTime > 1500):
+            lastFireTime = currentTime
+            vaccine = GameObject((255, 153, 51), pygame.Rect((player.rect.x + player.rect.width/2), player.rect.y, 10, 45),0,0,0)
+            shootVaccine(vaccine)
      
     # if left arrow key is pressed
     if keys[pygame.K_LEFT] and player.rect.x>0:
@@ -253,7 +293,6 @@ while run:
          
         # increment in x co-ordinate
         player.rect = player.rect.move(player.vel,0)
-
 
 
     #shootVaccine()
@@ -273,12 +312,21 @@ while run:
     win.fill(currentColor)
     for obstacle in obstacles:
         obstacle.ydir = 0
-        updateFallingObject(obstacle)
+        updateMovingObject(obstacle)
         pygame.draw.rect(win, obstColor, obstacle)
     for obstacle2 in obstacle2s:
         obstacle2.ydir = 0
-        updateFallingObject(obstacle2)
+        updateMovingObject(obstacle2)
         pygame.draw.rect(win, obst2Color, obstacle2)
+    for vaccine in vaccines:
+        if (vaccine.dead == False):
+            # only update object if it is not dead
+            if (updateMovingObject(vaccine, obstacles, True) == False):
+                vaccine.xdir = 0
+                vaccine.vel = 15
+                pygame.draw.rect(win,vaccine.color,vaccine.rect)
+        else:
+            vaccines.remove(vaccine)
 
     # velocity / speed of movement
     scoreString = "Score: {}".format(score)
@@ -306,29 +354,17 @@ while run:
    
     for germ in activeGerms:
        
-        if (updateFallingObject(germ, obstacles) == True):
+        if (updateMovingObject(germ, obstacles) == True):
             activeGerms.remove(germ)
         # germ collision detection
-        #if (germ.dead == False and germ.rect.colliderect(obstacle2.rect) or powerUp.dead == False and powerUp.rect.colliderect(obstacle2.rect) ):
+        #if (germ.dead == False and germ.rect.colliderect(obstacle2.rect) or powerUp.dead == False and powerUp.rect.colliderect(obstacle2.rect) ):     
+        if (germ.dead == False):
+            if (detectGermKill(germ, player) == False):
+                for vaccine in vaccines:
+                    if (detectGermKill(germ, vaccine) == True):
+                        vaccine.dead = True
+                        break
 
-        if (germ.dead == False and player.rect.colliderect(germ.rect)):
-            score += 1
-            if (score % 5 == 0 ):
-                level += 1
-                germSpeed += 1
-           
-                player.rect.width = player_width
-                germRNot -= .2 * germRNot
-                if germRNot <= 1:
-                    germRNot = 1
-                rt.stop()
-                rt = RepeatedTimer(germRNot, addGerm)
-            player.rect.width = player.rect.width-15
-            if player.rect.width <= 20:
-                player.rect.width =20
-            germ.dead = True      
-
-         
         if germ.dead == False and germ.rect.y >= BOARD_HEIGHT-germ.rect.height:
             germ.dead = True
             lives -=1
@@ -340,7 +376,7 @@ while run:
                 break
     #process activePowerUps
     for powerUp in activePowerUps:
-        if updateFallingObject(powerUp, obstacles) == True:
+        if updateMovingObject(powerUp, obstacles) == True:
             activePowerUps.remove(powerUp)
         if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
             powerUp.dead = True
