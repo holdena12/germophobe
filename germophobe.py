@@ -72,14 +72,13 @@ player = GameObject((50,50,75), pygame.Rect((BOARD_WIDTH/2), BOARD_HEIGHT-80, pl
 activeGerms = []
 activePowerUps = []
 obstacles = []
-obstacle2s = []
 vaccines = []
 activeWeirdGerms = []
 # create obstacles
 obstacle = GameObject(obstColor, pygame.Rect(200,500,400,50), 4)
-obstacle2 = GameObject(obst2Color,pygame.Rect(200,300,200,50), 6)
+obstacle2 = GameObject(obst2Color,pygame.Rect(200,300,200,50), 6, -1, 0)
 obstacles.append(obstacle)
-obstacle2s.append(obstacle2)
+obstacles.append(obstacle2)
 
 
 
@@ -188,20 +187,7 @@ def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False
                         if randDir == 0 or randDir == 1 or randDir == 2 or randDir == 3 or randDir == 4 or randDir == 5:
                             randDir = 1
                         gameObject.ydir *= randDir
-            if gameObject.rect.colliderect(obstacle2):
-                gameObject.collisionBuffer = 60
-                rand_dir = random.randint(-1,5)
-                if rand_dir == 0 or rand_dir == 2 or rand_dir == 3 or rand_dir == 4 or rand_dir == 5:
-                    rand_dir =-1
-                gameObject.ydir *= rand_dir
-               
-                if isWeirdGerm == True:
-                    if gameObject.rect.colliderect(obstacle2):
-                        randDir = random.randint(-1,5)
-                        if randDir == 0 or randDir == 1 or randDir == 2 or randDir == 3 or randDir == 4 or randDir == 5:
-                            randDir = 1
-                        gameObject.ydir *= randDir
-
+           
                 #if (gameObject.rect.left <= obstacle.left+gameObject.rect.width/2):
                     #gameObject.xdir *= -1
                 #pick a random number between 1 and 1.5 and random boolean 0 or 1 to indicate positve or negative and then set that value to gameObject.xPert
@@ -314,10 +300,7 @@ while run:
         obstacle.ydir = 0
         updateMovingObject(obstacle)
         pygame.draw.rect(win, obstColor, obstacle)
-    for obstacle2 in obstacle2s:
-        obstacle2.ydir = 0
-        updateMovingObject(obstacle2)
-        pygame.draw.rect(win, obst2Color, obstacle2)
+    
     for vaccine in vaccines:
         if (vaccine.dead == False):
             # only update object if it is not dead
