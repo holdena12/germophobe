@@ -377,7 +377,10 @@ while run:
             activePowerUps.remove(powerUp)
         if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
             powerUp.dead = True
-            lives +=1
+            if powerUp.type == 0:
+                lives +=1
+            elif powerUp.type == 1:
+                player.color =(255,255,0)
         if powerUp.rect.y >= BOARD_HEIGHT-powerUp.rect.height:
             powerUp.dead = True
        
