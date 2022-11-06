@@ -3,7 +3,68 @@ import pygame
 import random
 import time
 import threading
+
+
+
+def render_multiline(data):
+        "Shows a multiline string with text, y pos and color for each line separated by comma"
+        tc = []
+        for line in data.split("\n"):
+ 
+            if line != "":
+                text, height, color = line.split(",")
+                if height == " " or height == "":
+                    height = 0
+                    if color == " " or color == "":
+                        color = "red"
+                else:
+                    height = int(height)
+                tc.append([text, height, color])
+        # 2. Each list of the list above is send to write to render text
+        cnt = 0
+        for t, height, c in tc:
+            cnt += 30
+            # calls write passing the text, the vertical position and the color
+            for i in t.split("\n"):
+                if height == 0:
+                    height = cnt
+                write(i, 200, height, color=c)
+                height += 30
+ 
+"""
+INSERT:
+text, vertical position, color
+ 
+1. you can omit the vertical position
+2. To put a blank line use ,,
+"""
+TEXT1 = """*** GERMAPHOBE ***, , gold
+A Game by Holden and Matt, , red
+,,
+https://github.com/holdena12/germophobe, , coral
+Game vaguely inspired by fear of germs, , cyan
+,,
+PRESS ANY KEY TO PLAY, , green
+Press left arrow to go left, , blue
+Press right arrow to go right ,, blue
+Press space to shoot vaccines ,, blue
+Press c for instant doom,, red
+
+"""
+
 pygame.init()
+
+Font = pygame.font.SysFont
+font1 = Font("Arial", 24)
+font2 = Font("Arial", 20)
+
+def write(text, x, y, color="Coral",):
+    "Returns a surface with a text in the center of the screen, at y coord."
+    
+    surface_text = font1.render(text, 1, pygame.Color(color))
+    text_rect = surface_text.get_rect(center=(500 // 2, y))
+    win.blit(surface_text, text_rect)
+    return surface_text
 
 
 #the players score
@@ -220,6 +281,8 @@ def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False
 timers = []
 rt = RepeatedTimer(germRNot, addGerm)
 rpt = RepeatedTimer(powerUpSpread, addPowerUp)
+timers.append(rt)
+timers.append(rpt)
 addGerm()
 
 
@@ -240,7 +303,9 @@ def detectGermKill(germ, gameObject):
             if germRNot <= 1:
                 germRNot = 1
             rt.stop()
+            timers.remove(rt)
             rt = RepeatedTimer(germRNot, addGerm)
+            timers.append(rt)
         gameObject.rect.width = gameObject.rect.width-15
         if gameObject.rect.width <= 20:
             gameObject.rect.width =20
@@ -252,156 +317,182 @@ def detectGermKill(germ, gameObject):
 run = True
 lastFireTime = -1
 
-# infinite loop
-while run:
-    # creates time delay of 10ms
-    pygame.time.delay(20)
-     
-    # iterate over the list of Event objects  
-    # that was returned by pygame.event.get() method.
-    for event in pygame.event.get():
-    
-        # if event object type is QUIT  
-        # then quitting the pygame  
-        keys = pygame.key.get_pressed()
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_SPACE:
-                 lastFireTime = -1
+clock = pygame.time.Clock()
+def mainloop():
+    global clock, font1, font2
+    # infinite loop
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quitGame()
+            elif event.type == pygame.KEYDOWN:
+                playGame()
+        render_multiline(TEXT1)
+        clock.tick(30)
+        pygame.display.update()
+
+def quitGame():
+    for timer in timers:
+        timer.stop()
+    pygame.quit()
+    exit()
+
+def playGame():
+    global run, liveString, roundsString, levelString, lives, rounds, lastFireTime, keys, rt
+    while run:
+        # creates time delay of 10ms
+        pygame.time.delay(10)
         
-    if (keys[pygame.K_SPACE] and rounds > 0):
+        # iterate over the list of Event objects  
+        # that was returned by pygame.event.get() method.
+        for event in pygame.event.get():
+        
+            # if event object type is QUIT  
+            # then quitting the pygame  
+            keys = pygame.key.get_pressed()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    lastFireTime = -1
+            if event.type == pygame.QUIT:
+                quitGame()
 
-        currentTime = round(time.time()*1000)
-        if (lastFireTime < 0  or currentTime-lastFireTime > 1500):
-            rounds -=1
-            lastFireTime = currentTime
-            vaccine = GameObject((255, 153, 51), pygame.Rect((player.rect.x + player.rect.width/2), player.rect.y, 10, 45),0,0,0)
-            shootVaccine(vaccine)
-     
-    # if left arrow key is pressed
-    if keys[pygame.K_LEFT] and player.rect.x>0:
-         
-        # decrement in x co-ordinate
-        player.rect = player.rect.move(-1*player.vel,0)
        
-         
-    # if left arrow key is pressed
-    if keys[pygame.K_RIGHT] and player.rect.x<BOARD_WIDTH-player.rect.width:
-         
-        # increment in x co-ordinate
-        player.rect = player.rect.move(player.vel,0)
+        if (keys[pygame.K_SPACE] and rounds > 0):
+
+            currentTime = round(time.time()*1000)
+            if (lastFireTime < 0  or currentTime-lastFireTime > 1500):
+                rounds -=1
+                lastFireTime = currentTime
+                vaccine = GameObject((255, 153, 51), pygame.Rect((player.rect.x + player.rect.width/2), player.rect.y, 10, 45),0,0,0)
+                shootVaccine(vaccine)
+        
+        # if left arrow key is pressed
+        if keys[pygame.K_LEFT] and player.rect.x>0:
+            
+            # decrement in x co-ordinate
+            player.rect = player.rect.move(-1*player.vel,0)
+        
+            
+        # if left arrow key is pressed
+        if keys[pygame.K_RIGHT] and player.rect.x<BOARD_WIDTH-player.rect.width:
+            
+            # increment in x co-ordinate
+            player.rect = player.rect.move(player.vel,0)
 
 
-    #shootVaccine()
+        #shootVaccine()
 
-    # covid easter egg
-    if keys[pygame.K_c]:
-        lives=7
-        playerSpeed = 25
-        # let the chaos begin!
-        rt.stop()
-        rt = RepeatedTimer(.1, addGerm)
+        # covid easter egg
+        if keys[pygame.K_c]:
+            lives=7
+            playerSpeed = 25
+            # let the chaos begin!
+            rt.stop()
+            timers.remove(rt)
+            rt = RepeatedTimer(.1, addGerm)
+            timers.append(rt)
 
 
 
 
 
-    win.fill(currentColor)
-    for obstacle in obstacles:
-        obstacle.ydir = 0
-        updateMovingObject(obstacle)
-        pygame.draw.rect(win, obstColor, obstacle)
+        win.fill(currentColor)
+        for obstacle in obstacles:
+            obstacle.ydir = 0
+            updateMovingObject(obstacle)
+            pygame.draw.rect(win, obstColor, obstacle)
+        
+        for vaccine in vaccines:
+            if (vaccine.dead == False):
+                # only update object if it is not dead
+                if (updateMovingObject(vaccine, obstacles, True) == False):
+                    vaccine.xdir = 0
+                    vaccine.vel = 15
+                    pygame.draw.rect(win,vaccine.color,vaccine.rect)
+            else:
+                vaccines.remove(vaccine)
+
+        # velocity / speed of movement
+        scoreString = "Score: {}".format(score)
+        text = font.render(scoreString, True, white, blue)
+        levelString = "level: {}".format(level)
+        text2 = font.render(levelString, True, white, blue )
+        liveString = "lives: {}".format(lives)
+        text3 = font.render(liveString, True, white, blue )
+        roundsString = "Rounds: {}".format(rounds)
+        text4 = font.render(roundsString,True,white, blue)
+        
+
     
-    for vaccine in vaccines:
-        if (vaccine.dead == False):
-            # only update object if it is not dead
-            if (updateMovingObject(vaccine, obstacles, True) == False):
-                vaccine.xdir = 0
-                vaccine.vel = 15
-                pygame.draw.rect(win,vaccine.color,vaccine.rect)
-        else:
-            vaccines.remove(vaccine)
+        textRect = text.get_rect()
+        text2Rect = text2.get_rect()
+        text3Rect = text3.get_rect()
+        text4Rect = text4.get_rect()
+    
+    
+        # set the center of the rectangular object.
+        textRect.center = (35,25)
+        text2Rect.center = (765, 25)
+        text3Rect.center = (35, 50)
+        text4Rect.center = (755, 50)
+        win.blit(text, textRect)
+        win.blit(text2, text2Rect)
+        win.blit(text3, text3Rect)
+        win.blit(text4, text4Rect )
 
-    # velocity / speed of movement
-    scoreString = "Score: {}".format(score)
-    text = font.render(scoreString, True, white, blue)
-    levelString = "level: {}".format(level)
-    text2 = font.render(levelString, True, white, blue )
-    liveString = "lives: {}".format(lives)
-    text3 = font.render(liveString, True, white, blue )
-    roundsString = "Rounds: {}".format(rounds)
-    text4 = font.render(roundsString,True,white, blue)
+        # process active germs
+    
+        for germ in activeGerms:
+        
+            if (updateMovingObject(germ, obstacles) == True):
+                activeGerms.remove(germ)
+            # germ collision detection
+            #if (germ.dead == False and germ.rect.colliderect(obstacle2.rect) or powerUp.dead == False and powerUp.rect.colliderect(obstacle2.rect) ):     
+            if (germ.dead == False):
+                if (detectGermKill(germ, player) == False):
+                    for vaccine in vaccines:
+                        if (detectGermKill(germ, vaccine) == True):
+                            vaccine.dead = True
+                            break
+
+            if germ.dead == False and germ.rect.y >= BOARD_HEIGHT-germ.rect.height:
+                germ.dead = True
+                lives -=1
+
+                if lives == 0:
+                    print("Game Over...")
+                    print("your score was",score ,". Level: ", level, " Good job!" )
+                    run = False
+                    quitGame()
+                    break
+        #process activePowerUps
+        for powerUp in activePowerUps:
+            if updateMovingObject(powerUp, obstacles) == True:
+                activePowerUps.remove(powerUp)
+            if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
+                powerUp.dead = True
+                if powerUp.type == 0:
+                    player.color =(255,255,0)
+                    rounds +=5
+                elif powerUp.type == 1:
+                    lives +=1
+                elif powerUp.type == 2:
+                    player.rect.width = player.rect.width*3
+                
+            if powerUp.rect.y >= BOARD_HEIGHT-powerUp.rect.height:
+                powerUp.dead = True
+        
+    
+        # drawing object on screen which is rectangle here
+        pygame.draw.rect(win, player.color, player.rect)
     
 
-   
-    textRect = text.get_rect()
-    text2Rect = text2.get_rect()
-    text3Rect = text3.get_rect()
-    text4Rect = text4.get_rect()
-   
-   
-    # set the center of the rectangular object.
-    textRect.center = (35,25)
-    text2Rect.center = (765, 25)
-    text3Rect.center = (35, 50)
-    text4Rect.center = (755, 50)
-    win.blit(text, textRect)
-    win.blit(text2, text2Rect)
-    win.blit(text3, text3Rect)
-    win.blit(text4, text4Rect )
+        # it refreshes the window
+        pygame.display.update()
 
-    # process active germs
-   
-    for germ in activeGerms:
-       
-        if (updateMovingObject(germ, obstacles) == True):
-            activeGerms.remove(germ)
-        # germ collision detection
-        #if (germ.dead == False and germ.rect.colliderect(obstacle2.rect) or powerUp.dead == False and powerUp.rect.colliderect(obstacle2.rect) ):     
-        if (germ.dead == False):
-            if (detectGermKill(germ, player) == False):
-                for vaccine in vaccines:
-                    if (detectGermKill(germ, vaccine) == True):
-                        vaccine.dead = True
-                        break
-
-        if germ.dead == False and germ.rect.y >= BOARD_HEIGHT-germ.rect.height:
-            germ.dead = True
-            lives -=1
-
-            if lives == 0:
-                print("Game Over...")
-                print("your score was",score ,". Level: ", level, " Good job!" )
-                run = False
-                break
-    #process activePowerUps
-    for powerUp in activePowerUps:
-        if updateMovingObject(powerUp, obstacles) == True:
-            activePowerUps.remove(powerUp)
-        if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
-            powerUp.dead = True
-            if powerUp.type == 0:
-                player.color =(255,255,0)
-                rounds +=5
-            elif powerUp.type == 1:
-                lives +=1
-            elif powerUp.type == 2:
-                player.rect.width = player.rect.width*3
-              
-        if powerUp.rect.y >= BOARD_HEIGHT-powerUp.rect.height:
-            powerUp.dead = True
-       
- 
-    # drawing object on screen which is rectangle here
-    pygame.draw.rect(win, player.color, player.rect)
-   
-
-    # it refreshes the window
-    pygame.display.update()
-
+mainloop()
 # closes the pygame window
-pygame.quit()
-rt.stop()
-rpt.stop()
+quitGame()
 
 exit()
 
