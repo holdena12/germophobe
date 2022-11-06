@@ -9,6 +9,8 @@ pygame.init()
 #the players score
 score = 0
 
+rounds = 10
+
 lives = 1
 keys = pygame.key.get_pressed()
 powerUpSpread = random.randint(7,15)
@@ -148,16 +150,17 @@ def addGerm():
 
 
 def addPowerUp():
-    powerUpType = random.randint(0,5)
-    if powerUpType > 0:
-        powerUpType = 0
-    else:
-        powerUpType = 1
+    powerUpType = random.randint(0,2)
+    
 
-    powerUp = PowerUps((10,75,200), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),random.choices([-1,1]),1,True,1,1,powerUpType)
+    powerUp = PowerUps((0,255,255), pygame.Rect(random.randint(25,775), 50, 25,25),random.randint(5,7),random.choices([-1,1]),1,True,1,1,powerUpType)
     if powerUpType == 1:
         powerUp.color = (255,255,255)
+    if powerUpType == 2:
+        powerUp.color = (0,0,0)
+
     activePowerUps.append(powerUp)
+
 
 def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False):
     if gameObject.isBaby == True:
@@ -190,29 +193,20 @@ def updateMovingObject(gameObject: GameObject, obstacles =[],dieOnImpact = False
                     gameObject.dead = True
                     return True
                 gameObject.collisionBuffer = 60
-                rand_dir = random.randint(-1,5)
-                if rand_dir == 0 or rand_dir == 2 or rand_dir == 3 or rand_dir == 4 or rand_dir == 5:
-                    rand_dir =-1
-                gameObject.ydir *= rand_dir
+                gameObject.ydir *= -1
                
                 if isWeirdGerm == True:
                     if gameObject.rect.colliderect(obstacle):
-                        randDir = random.randint(-1,5)
-                        if randDir == 0 or randDir == 1 or randDir == 2 or randDir == 3 or randDir == 4 or randDir == 5:
-                            randDir = 1
-                        gameObject.ydir *= randDir
+                     
+                        gameObject.ydir *= -1
            
                 #if (gameObject.rect.left <= obstacle.left+gameObject.rect.width/2):
                     #gameObject.xdir *= -1
                 #pick a random number between 1 and 1.5 and random boolean 0 or 1 to indicate positve or negative and then set that value to gameObject.xPert
                 # pick a random number between 1 and 1.5 and random boolean 0 or 1 to indicate positve or negative and then set that value to gameObject.yPert
-                rand_sp = random.randint(0,1)
-                if (rand_sp == 0):
-                    rand_sp=-1
-                else:
-                    rand_sp = 1
-                gameObject.xPert = random.uniform(1,1.5)*rand_sp
-                gameObject.yPert = random.uniform(1,1.5)*rand_sp
+              
+                gameObject.xPert = random.uniform(1,1.5)
+                gameObject.yPert = random.uniform(1,1.5)
                
                 #print("Obstacle contact new pertubation is xPert {} and yPert {}".format(gameObject.xPert, gameObject.yPert))
    
@@ -274,9 +268,11 @@ while run:
             if event.key == pygame.K_SPACE:
                  lastFireTime = -1
         
-    if (keys[pygame.K_SPACE]):
+    if (keys[pygame.K_SPACE] and rounds > 0):
+
         currentTime = round(time.time()*1000)
         if (lastFireTime < 0  or currentTime-lastFireTime > 1500):
+            rounds -=1
             lastFireTime = currentTime
             vaccine = GameObject((255, 153, 51), pygame.Rect((player.rect.x + player.rect.width/2), player.rect.y, 10, 45),0,0,0)
             shootVaccine(vaccine)
@@ -299,7 +295,7 @@ while run:
 
     # covid easter egg
     if keys[pygame.K_c]:
-        lives=23
+        lives=7
         playerSpeed = 25
         # let the chaos begin!
         rt.stop()
@@ -331,21 +327,27 @@ while run:
     levelString = "level: {}".format(level)
     text2 = font.render(levelString, True, white, blue )
     liveString = "lives: {}".format(lives)
-   
     text3 = font.render(liveString, True, white, blue )
+    roundsString = "Rounds: {}".format(rounds)
+    text4 = font.render(roundsString,True,white, blue)
+    
+
    
     textRect = text.get_rect()
     text2Rect = text2.get_rect()
     text3Rect = text3.get_rect()
+    text4Rect = text4.get_rect()
    
    
     # set the center of the rectangular object.
     textRect.center = (35,25)
     text2Rect.center = (765, 25)
     text3Rect.center = (35, 50)
+    text4Rect.center = (755, 50)
     win.blit(text, textRect)
     win.blit(text2, text2Rect)
     win.blit(text3, text3Rect)
+    win.blit(text4, text4Rect )
 
     # process active germs
    
@@ -378,9 +380,13 @@ while run:
         if powerUp.dead == False and player.rect.colliderect(powerUp.rect):
             powerUp.dead = True
             if powerUp.type == 0:
-                lives +=1
-            elif powerUp.type == 1:
                 player.color =(255,255,0)
+                rounds +=5
+            elif powerUp.type == 1:
+                lives +=1
+            elif powerUp.type == 2:
+                player.rect.width = player.rect.width*3
+              
         if powerUp.rect.y >= BOARD_HEIGHT-powerUp.rect.height:
             powerUp.dead = True
        
