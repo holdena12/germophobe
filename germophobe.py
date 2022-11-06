@@ -144,8 +144,8 @@ obstacles = []
 vaccines = []
 activeWeirdGerms = []
 # create obstacles
-obstacle = GameObject(obstColor, pygame.Rect(200,500,400,50), 4)
-obstacle2 = GameObject(obst2Color,pygame.Rect(200,300,200,50), 6, -1, 0)
+obstacle = GameObject(obstColor, pygame.Rect(200,500,200,25), 10)
+obstacle2 = GameObject(obst2Color,pygame.Rect(200,300,150,25), 8, -1, 0)
 obstacles.append(obstacle)
 obstacles.append(obstacle2)
 
