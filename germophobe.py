@@ -88,10 +88,20 @@ currentColor = (0, 0, 255)
 obstColor = (0,0, 0)
 obst2Color = (255,255,255)
 
+
+germImg = pygame.image.load('rGerm.png')
+weirdGermImg = pygame.image.load('rWeirdGerm.png')
 level = 1
 
 
+
 win = pygame.display.set_mode((BOARD_WIDTH,BOARD_HEIGHT))
+
+DEFAULT_IMAGE_SIZE=(100,100)
+germImg = pygame.transform.scale(germImg,DEFAULT_IMAGE_SIZE)
+
+
+win.blit(germImg,(0,0))
 
 class GameObject:
 
@@ -444,12 +454,13 @@ def playGame():
         # process active germs
     
         for germ in activeGerms:
-        
+            
             if (updateMovingObject(germ, obstacles) == True):
                 activeGerms.remove(germ)
             # germ collision detection
             #if (germ.dead == False and germ.rect.colliderect(obstacle2.rect) or powerUp.dead == False and powerUp.rect.colliderect(obstacle2.rect) ):     
             if (germ.dead == False):
+                win.blit(germImg, germ.rect)
                 if (detectGermKill(germ, player) == False):
                     for vaccine in vaccines:
                         if (detectGermKill(germ, vaccine) == True):
