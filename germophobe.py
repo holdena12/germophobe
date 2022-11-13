@@ -1,4 +1,5 @@
 # import pygame module in this program
+from concurrent.futures.thread import BrokenThreadPool
 import pygame
 import random
 import time
@@ -77,8 +78,8 @@ keys = pygame.key.get_pressed()
 powerUpSpread = random.randint(7,15)
 germRNot = 4
 vaccineSpread = 0
-BOARD_WIDTH = 800
-BOARD_HEIGHT = 1100
+BOARD_WIDTH = 550
+BOARD_HEIGHT = 700
 gameTop = pygame.Rect(0,0,BOARD_WIDTH,1)
 gameBottom = pygame.Rect(0,BOARD_HEIGHT,BOARD_WIDTH,1)
 gameLeft = pygame.Rect(0,0,1,BOARD_HEIGHT)
@@ -144,8 +145,8 @@ obstacles = []
 vaccines = []
 activeWeirdGerms = []
 # create obstacles
-obstacle = GameObject(obstColor, pygame.Rect(200,500,200,25), 10)
-obstacle2 = GameObject(obst2Color,pygame.Rect(200,300,150,25), 8, -1, 0)
+obstacle = GameObject(obstColor, pygame.Rect((BOARD_WIDTH/2)+25,(BOARD_HEIGHT/2) -50,200,25), 10)
+obstacle2 = GameObject(obst2Color,pygame.Rect(BOARD_WIDTH/2,(BOARD_HEIGHT/2) +50,150,25), 8, -1, 0)
 obstacles.append(obstacle)
 obstacles.append(obstacle2)
 
@@ -432,9 +433,9 @@ def playGame():
     
         # set the center of the rectangular object.
         textRect.center = (35,25)
-        text2Rect.center = (765, 25)
+        text2Rect.center = (BOARD_WIDTH-35, 25)
         text3Rect.center = (35, 50)
-        text4Rect.center = (755, 50)
+        text4Rect.center = (BOARD_WIDTH-45, 50)
         win.blit(text, textRect)
         win.blit(text2, text2Rect)
         win.blit(text3, text3Rect)
